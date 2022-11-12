@@ -24,7 +24,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/tj10200/docker-compose-orchestrator/pkg/orchestrator"
 	"os"
@@ -32,6 +34,7 @@ import (
 
 var ComposeFiles []string
 var DependencyConfig string
+var DotEnvFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -40,7 +43,13 @@ var rootCmd = &cobra.Command{
 	Long:  "Run your docker compose services with proper dependency control",
 
 	Run: func(cmd *cobra.Command, args []string) {
-		orch, err := orchestrator.NewOrchestrator()
+		if DotEnvFile != "" {
+			if err := godotenv.Load(DotEnvFile); err != nil {
+				log.Fatalf("Failed to load .env file(%s): %v", DotEnvFile, err)
+			}
+		}
+
+		orch, err := orchestrator.NewOrchestrator(afero.NewOsFs(), ComposeFiles, DependencyConfig)
 		if err != nil {
 			log.Fatalf("Failed to create orchestrator instance: %s", err)
 		}
@@ -63,5 +72,6 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().StringSliceVar(&ComposeFiles, "docker-compose-files", []string{}, "compose files to use for config settings")
-	rootCmd.Flags().StringVar(&DependencyConfig, "config", "config.toml", "configuration file listing dependency graph for compose services")
+	rootCmd.Flags().StringVar(&DependencyConfig, "config", "config.yaml", "configuration file listing dependency graph for compose services")
+	rootCmd.Flags().StringVar(&DotEnvFile, "env", "", "dotenv configuration file")
 }

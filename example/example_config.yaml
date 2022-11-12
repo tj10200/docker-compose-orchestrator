@@ -1,0 +1,32 @@
+services:
+  postgres:
+    after_run:
+      - type: docker
+        image: postgres:14
+        environment:
+          POSTGRES_USER: ${POSTGRES_USER}
+          POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+          POSTGRES_DB: ${POSTGRES_DB}
+        command: "PGPASSWORD=\"${POSTGRES_PASSWORD}\" psql -h postgres -p 5432 -d \"${POSTGRES_DB}\" -U \"${POSTGRES_USER}\" -c \"SELECT 1;\""
+        timeout: 10s
+        network_name: sqwatch_gql_db_net
+      - type: host
+        environment:
+          POSTGRES_USER: ${POSTGRES_USER}
+          POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+          POSTGRES_DB: ${POSTGRES_DB}
+        dir: /Users/tjayjohnson/sqwatch/sqwatch_gql
+        tool: "make"
+        args:
+          - "local"
+  fusionauth:
+    commands:
+      - type: docker
+        image: postgres:14
+        environment:
+          POSTGRES_USER: ${POSTGRES_USER}
+          POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+          POSTGRES_DB: ${POSTGRES_DB}
+        command: "PGPASSWORD=\"${POSTGRES_PASSWORD}\" psql -h postgres -p 5432 -d \"${POSTGRES_DB}\" -U \"${POSTGRES_USER}\" -c \"SELECT * from my_schema.my_table LIMIT 1;\""
+        timeout: 10s
+        network_name: <dir>_<compose-network>
